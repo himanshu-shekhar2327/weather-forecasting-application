@@ -1,40 +1,44 @@
 import time
+from database import create_database, location_exists, save_to_db
+from fetch_data import fetch_weather
+from zones import CITY_DATA
 
-from database import location_exists ,save_to_db
-from fetch_data import get_coordinates , fetch_weather
+create_database()
 
-INDIAN_CITIES = [
-    "Mumbai", "Delhi", "Bangalore", "Chennai", "Kolkata",
-    "Hyderabad", "Pune", "Ahmedabad", "Jaipur", "Surat"]
-
-
-for city in INDIAN_CITIES:
-     
+for city, info in CITY_DATA.items():
     try:
-        location = get_coordinates(city)
-
-        if location is None:
-            print(f'{city} not found, skipping...')
-            continue
-    
-        official_name = location['name']
-
-        if location_exists(official_name) :
-            print(f'{official_name} already exists, skipping...')
+        if location_exists(city):
+            print(f"{city} already exists, skipping...")
             continue
 
-        df = fetch_weather(location['latitude'],location['longitude'])
+        print(f"Fetching {city} ({info['zone']})...")
+
+        # retry up to 3 times if API fails
+        df = None
+        for attempt in range(3):
+            df = fetch_weather(info['lat'], info['lon'])
+            if df is not None:
+                break
+            print(f"  Attempt {attempt + 1} failed. Waiting 60 seconds...")
+            time.sleep(60)
+
         if df is None:
-            print(f'Could Not fetch data for {official_name}, skipping ....')
+            print(f"Could not fetch {city} after 3 attempts, skipping...")
             continue
 
-        save_to_db(df,location['name'])
+        save_to_db(
+            df, city,
+            zone     = info['zone'],
+            lat      = info['lat'],
+            lon      = info['lon'],
+            altitude = info['alt']
+        )
+        print(f"{city} saved — zone: {info['zone']}")
 
-        print(f'{official_name} saved successfully')
-    
-    except Exception as e :
-        print(f'Error for {city}: {e}')
-        print(f'Waiting 60 seconds...')
+    except Exception as e:
+        print(f"Error for {city}: {e}")
+        print("Waiting 60 seconds before next city...")
+        time.sleep(60)
         continue
 
-    time.sleep(2)  # wait 2 second between cities
+    time.sleep(5)  # 5 seconds between successful requests
