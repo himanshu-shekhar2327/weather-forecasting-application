@@ -106,6 +106,15 @@ def save_zone_model(zone, variable, model_type,
         """, (zone, variable, model_type, rmse, model_path))
         conn.commit()
 
+def get_zone_models(zone):
+    with sqlite3.connect(DB_PATH) as conn:
+        df = pd.read_sql("""
+            SELECT variable, model_type, model_path
+            FROM zone_models
+            WHERE zone = ?
+        """, conn, params=(zone,))
+        return df
+    
 
 def location_exists(city_name):
     with sqlite3.connect(DB_PATH) as conn:

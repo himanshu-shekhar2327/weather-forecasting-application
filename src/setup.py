@@ -3,6 +3,10 @@ from database import create_database, location_exists, save_to_db
 from fetch_data import fetch_weather
 from zones import CITY_DATA
 
+
+import sys
+sys.path.append('src')
+
 create_database()
 
 for city, info in CITY_DATA.items():

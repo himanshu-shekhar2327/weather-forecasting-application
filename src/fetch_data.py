@@ -67,8 +67,15 @@ def fetch_recent_weather(lat, lon, days=30):
         return None
 
     df = pd.DataFrame(data['daily'])
+    
     df['time'] = pd.to_datetime(df['time'])
     df = df.set_index('time')
+    df = df.rename(columns={
+    'temperature_2m_mean':      'temperature',
+    'precipitation_sum':        'precipitation',
+    'windspeed_10m_max':        'windspeed',
+    'relative_humidity_2m_max': 'humidity'
+    })
     return df
 
 
