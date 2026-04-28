@@ -80,10 +80,15 @@ def fetch_recent_weather(lat, lon, days=30):
 
 
 def get_coordinates(place_name):
+
     """
     Used at runtime when user types unknown city.
     Returns lat, lon, elevation, and display name.
     """
+    if ',' in place_name:
+        search_query = place_name
+    else:
+        search_query = f'{place_name}, india'
     search_query = f'{place_name}, india'
     url = 'https://geocoding-api.open-meteo.com/v1/search'
     params = {
@@ -110,3 +115,43 @@ def get_coordinates(place_name):
             }
 
     return None
+
+def get_all_coordinates(place_name):
+    """
+    Returns list of matching locations — used for search suggestions.
+    """
+    if ',' in place_name:
+        search_query = place_name
+    else:
+        search_query = f'{place_name}, india'
+    
+    url = 'https://geocoding-api.open-meteo.com/v1/search'
+    params = {
+        'name':     search_query,
+        'count':    7,           # get 7 suggestions
+        'language': 'en',
+        'format':   'json',
+    }
+
+    try:
+        response = requests.get(url, params=params, timeout=30)
+        data = response.json()
+
+        if 'results' not in data:
+            return None
+
+        results = []
+        for r in data['results']:
+            if r.get('country_code') == 'IN':
+                results.append({
+                    'name':      r.get('name'),
+                    'state':     r.get('admin1', ''),
+                    'latitude':  r.get('latitude'),
+                    'longitude': r.get('longitude'),
+                    'elevation': r.get('elevation', 0),
+                })
+        
+        return results if results else None
+
+    except Exception:
+        return None

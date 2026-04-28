@@ -1,0 +1,12 @@
+streamlit==1.32.0
+pandas
+numpy
+plotly
+scikit-learn
+xgboost
+lightgbm
+statsmodels
+tensorflow-cpu
+joblib
+requests
+apscheduler

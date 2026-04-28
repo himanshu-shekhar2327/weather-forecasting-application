@@ -4,6 +4,6 @@ sys.path.append('src')
 
 from predictor import forecast_city
 
-print("Testing forecast for Aurangabad...")
-forecast = forecast_city('Aurangabad')
+print("Testing forecast for 'Angul...")
+forecast = forecast_city('Angul')
 print(forecast)

@@ -19,10 +19,6 @@ VARIABLES = ['temperature', 'precipitation',
 
 
 def load_zone_models(zone):
-    """
-    Loading all 4 winner models for a zone.
-    Returns dict of {variable : (model, model_type)}
-    """
     df = get_zone_models(zone)
 
     models = {}
@@ -38,34 +34,44 @@ def load_zone_models(zone):
         
         models[variable] = (model, model_type)
 
-    # load scalers separately
+    # load scalers only if LSTM exists in this zone
     scaler_path = f'saved_models/{zone}/scalers.pkl'
-    scalers = joblib.load(scaler_path)
+    
+    if os.path.exists(scaler_path):
+        scalers = joblib.load(scaler_path)
+    else:
+        scalers = None
 
     return models, scalers
 
-def forecast_city(city_name, days = 7):
+def forecast_city(city_name, days=8, lat=None, lon=None, alt=None):
+
 
     """
     Main Function - takes city name, return 7 day forecast DataFrame
     """
-
-    # getting city info
-    city_info = get_city_info(city_name)
-
-    if city_info:
-        # known city - get from zones.py
-        zone = city_info['zone']
-        lat  = city_info['lat']
-        lon  = city_info['lon']
-        alt  = city_info['alt']
-    
-    else:
-        data = get_coordinates(city_name)
-        lat  = data['latitude']
-        lon  = data['longitude']
-        alt  = data['elevation']
+    # if coordinates provided directly — use them
+    if lat and lon:
         zone = get_zone_from_coordinates(lat, lon)
+        if zone is None:
+            zone = "india"
+    else:
+        # fall back to existing logic
+        city_info = get_city_info(city_name)
+        if city_info:
+            zone = city_info['zone']
+            lat  = city_info['lat']
+            lon  = city_info['lon']
+            alt  = city_info['alt']
+        else:
+            data = get_coordinates(city_name)
+            lat  = data['latitude']
+            lon  = data['longitude']
+            alt  = data['elevation']
+            zone = get_zone_from_coordinates(lat, lon)
+            if zone is None:
+                zone = "india"
+
     
     recent_weather = fetch_recent_weather(lat,lon)
     models, scalers = load_zone_models(zone)
@@ -88,9 +94,14 @@ def forecast_city(city_name, days = 7):
                 # get last 14 days of 4 variables as numpy array
                 last14 = recent_df[VARIABLES].values[-14:]
                 
-                # scale using first city's scaler
-                first_city = list(scalers.keys())[0]
-                scaler = scalers[first_city]
+                # scale — use saved scaler or fit on recent data
+                if scalers is not None:
+                    first_city = list(scalers.keys())[0]
+                    scaler = scalers[first_city]
+                else:
+                    scaler = MinMaxScaler()
+                    scaler.fit(recent_df[VARIABLES].values)
+                    
                 last14_scaled = scaler.transform(last14)
                 
                 # reshape to (1, 14, 4) for LSTM
@@ -105,15 +116,18 @@ def forecast_city(city_name, days = 7):
                 value = pred_real[0][var_index]
                 
             else:
-                # create features from recent_df
-                feat = create_features(recent_df)
-                feat = feat.dropna()
-                
-                # take only last row — that is today's feature vector
-                last_row = feat.iloc[[-1]]
-                
-                # predict
-                value = model.predict(last_row)[0]
+                if model_type == 'VAR':
+                    # VAR needs last 5 days as input
+                    last5 = recent_df[VARIABLES].values[-5:]
+                    forecast = model.forecast(last5, steps=1)
+                    var_index = VARIABLES.index(variable)
+                    value = forecast[0][var_index]
+                else:
+                    # RF, XGBoost, LightGBM
+                    feat = create_features(recent_df)
+                    feat = feat.dropna()
+                    last_row = feat.iloc[[-1]]
+                    value = model.predict(last_row)[0]
                 
             
             predictions[variable] = value

@@ -40,7 +40,7 @@ def create_zone_features(zone_df, lag_days = 14):
         city_df = zone_df[zone_df['city']  ==  city].copy()
         city_df = city_df.set_index('date')
         city_df = city_df.asfreq('D')
-        city_df = city_df.fillna(method = 'ffill')
+        city_df = city_df.ffill()
         
         feat = create_features(city_df)
 

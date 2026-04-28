@@ -32,7 +32,7 @@ def prepare_var_data(zone_df):
         city_df = zone_df[zone_df['city'] == city].copy()
         city_df = city_df.set_index('date')
         city_df = city_df.asfreq('D')
-        city_df = city_df.fillna(method='ffill')
+        city_df = city_df.ffill()
         city_df = city_df[VARIABLES]
 
         train_size = int(len(city_df) * 0.80)
@@ -71,7 +71,7 @@ def prepare_lstm_data(zone_df):
         city_df = zone_df[zone_df['city'] == city].copy()
         city_df = city_df.set_index('date')
         city_df = city_df.asfreq('D')
-        city_df = city_df.fillna(method='ffill')
+        city_df = city_df.ffill()
         
         # keep only 4 weather variables
         data = city_df[VARIABLES].values
@@ -118,6 +118,10 @@ def run_selector():
         # create save directory
         save_dir = f'saved_models/{zone}'
         os.makedirs(save_dir, exist_ok=True)
+        
+        # save scalers for this zone
+        joblib.dump(scalers, f'{save_dir}/scalers.pkl')
+
 
         # for each variable , trrain all models and pick winner
         for variable in VARIABLES:
