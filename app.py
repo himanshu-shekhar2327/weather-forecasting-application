@@ -118,7 +118,13 @@ if 'coordinates' not in st.session_state:
     st.session_state.coordinates = None
 
 # ─── TIME BASED THEME ──────────────────────────────────
-hour = datetime.now().hour
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+ist = ZoneInfo('Asia/Kolkata')
+now = datetime.now(ist)
+hour = now.hour
+current_time = now.strftime('%A, %I:%M %p')
 if 5 <= hour < 12:
     greeting = "Good morning"
     bg_color  = "#C8510A"
@@ -379,7 +385,6 @@ else:
         st.rerun()
 
     # ─── MAIN WEATHER CARD ─────────────────────────────
-    current_time = datetime.now().strftime('%A, %I:%M %p')
 
     weather_card_html = f"""
     <div style="background:linear-gradient(160deg,{bg_color},#0A1428);
