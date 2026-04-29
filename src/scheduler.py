@@ -35,9 +35,5 @@ def nightly_job():
     print(f"\n Nightly job complete: {datetime.now()}")
         
     
-scheduler = BlockingScheduler()
-scheduler.add_job(nightly_job, 'cron', hour=0, minute=0)
 
-print('Scheduler started - nightly retrain at 12:00 AM')
-scheduler.start()
         

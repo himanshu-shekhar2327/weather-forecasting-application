@@ -7,6 +7,7 @@ from predictor import forecast_city
 from zones import get_city_info, get_zone_from_coordinates
 import streamlit.components.v1 as components
 import plotly.graph_objects as go
+from apscheduler.schedulers.background import BackgroundScheduler
 
 # ─── PAGE CONFIG ───────────────────────────────────────
 st.set_page_config(
@@ -116,6 +117,14 @@ if 'forecast' not in st.session_state:
     st.session_state.forecast = None
 if 'coordinates' not in st.session_state:
     st.session_state.coordinates = None
+
+# ─── BACKGROUND SCHEDULER ──────────────────────────────
+if 'scheduler_started' not in st.session_state:
+    from scheduler import nightly_job
+    _scheduler = BackgroundScheduler()
+    _scheduler.add_job(nightly_job, 'cron', hour=0, minute=0)
+    _scheduler.start()
+    st.session_state.scheduler_started = True
 
 # ─── TIME BASED THEME ──────────────────────────────────
 from datetime import datetime, timedelta
