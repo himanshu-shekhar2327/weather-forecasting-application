@@ -117,6 +117,8 @@ if 'forecast' not in st.session_state:
     st.session_state.forecast = None
 if 'coordinates' not in st.session_state:
     st.session_state.coordinates = None
+if 'nwp_forecast' not in st.session_state:
+    st.session_state.nwp_forecast = None
 
 # ─── BACKGROUND SCHEDULER ──────────────────────────────
 if 'scheduler_started' not in st.session_state:
@@ -305,6 +307,28 @@ else:
                 st.session_state.coordinates = None
                 st.rerun()
 
+    # ─── FETCH NWP FORECAST ────────────────────────────────
+    if 'nwp_forecast' not in st.session_state:
+        st.session_state.nwp_forecast = None
+
+    if st.session_state.nwp_forecast is None:
+        try:
+            from fetch_data import fetch_nwp_forecast
+            coords = st.session_state.coordinates
+            if coords:
+                st.session_state.nwp_forecast = fetch_nwp_forecast(
+                    coords['lat'], coords['lon'], days=7
+                )
+            else:
+                city_info = get_city_info(st.session_state.city)
+                if city_info:
+                    st.session_state.nwp_forecast = fetch_nwp_forecast(
+                        city_info['lat'], city_info['lon'], days=7
+                    )
+        except Exception as e:
+            print(f"NWP fetch failed: {e}")
+            st.session_state.nwp_forecast = None
+
     forecast  = st.session_state.forecast
     city_name = st.session_state.city
 
@@ -391,6 +415,7 @@ else:
         st.session_state.city        = None
         st.session_state.forecast    = None
         st.session_state.coordinates = None
+        st.session_state.nwp_forecast = None
         st.rerun()
 
     # ─── MAIN WEATHER CARD ─────────────────────────────
@@ -572,6 +597,103 @@ else:
         </p>
     </div>
     """, height=70)
+
+# ─── NWP vs ML COMPARISON CARD ─────────────────────
+    nwp = st.session_state.nwp_forecast
+    if nwp is not None:
+        try:
+            nwp_today = nwp.iloc[0]
+            nwp_temp  = round(float(nwp_today['temperature']),   1)
+            nwp_prec  = round(float(nwp_today['precipitation']), 1)
+            nwp_wind  = round(float(nwp_today['windspeed']),     1)
+            nwp_hum   = round(float(nwp_today['humidity']),      1)
+
+            components.html(f"""
+            <div style="font-family:sans-serif;
+                        background:rgba(30,40,80,0.9);
+                        border-radius:16px; padding:1rem 1.25rem;
+                        border:1px solid rgba(100,120,200,0.2);
+                        margin-bottom:10px;">
+
+                <p style="color:rgba(255,255,255,0.35); font-size:11px;
+                          letter-spacing:0.08em; margin:0 0 0.75rem;">
+                    NWP vs AI — TODAY'S COMPARISON
+                </p>
+
+                <!-- header row -->
+                <div style="display:flex; justify-content:space-between;
+                            margin-bottom:10px;">
+                    <span style="font-size:11px; color:rgba(255,255,255,0.3);
+                                 width:30%;"></span>
+                    <span style="font-size:12px; color:#4FC3F7;
+                                 font-weight:600; width:35%;
+                                 text-align:center;">🛰️ NWP Forecast</span>
+                    <span style="font-size:12px; color:#6DC89A;
+                                 font-weight:600; width:35%;
+                                 text-align:center;">🤖 AI Prediction</span>
+                </div>
+
+                <!-- temperature row -->
+                <div style="display:flex; justify-content:space-between;
+                            align-items:center; margin-bottom:8px;">
+                    <span style="color:rgba(255,255,255,0.5);
+                                 font-size:13px; width:30%;">🌡️ Temp</span>
+                    <span style="color:#4FC3F7; font-size:14px;
+                                 font-weight:500; width:35%;
+                                 text-align:center;">{nwp_temp}°C</span>
+                    <span style="color:#6DC89A; font-size:14px;
+                                 font-weight:500; width:35%;
+                                 text-align:center;">{temp}°C</span>
+                </div>
+
+                <!-- humidity row -->
+                <div style="display:flex; justify-content:space-between;
+                            align-items:center; margin-bottom:8px;">
+                    <span style="color:rgba(255,255,255,0.5);
+                                 font-size:13px; width:30%;">💧 Humidity</span>
+                    <span style="color:#4FC3F7; font-size:14px;
+                                 font-weight:500; width:35%;
+                                 text-align:center;">{nwp_hum}%</span>
+                    <span style="color:#6DC89A; font-size:14px;
+                                 font-weight:500; width:35%;
+                                 text-align:center;">{humidity}%</span>
+                </div>
+
+                <!-- windspeed row -->
+                <div style="display:flex; justify-content:space-between;
+                            align-items:center; margin-bottom:8px;">
+                    <span style="color:rgba(255,255,255,0.5);
+                                 font-size:13px; width:30%;">💨 Wind</span>
+                    <span style="color:#4FC3F7; font-size:14px;
+                                 font-weight:500; width:35%;
+                                 text-align:center;">{nwp_wind} km/h</span>
+                    <span style="color:#6DC89A; font-size:14px;
+                                 font-weight:500; width:35%;
+                                 text-align:center;">{wind} km/h</span>
+                </div>
+
+                <!-- precipitation row -->
+                <div style="display:flex; justify-content:space-between;
+                            align-items:center; margin-bottom:10px;">
+                    <span style="color:rgba(255,255,255,0.5);
+                                 font-size:13px; width:30%;">🌧️ Rain</span>
+                    <span style="color:#4FC3F7; font-size:14px;
+                                 font-weight:500; width:35%;
+                                 text-align:center;">{nwp_prec} mm</span>
+                    <span style="color:#6DC89A; font-size:14px;
+                                 font-weight:500; width:35%;
+                                 text-align:center;">{precip} mm</span>
+                </div>
+
+                <p style="color:rgba(255,255,255,0.25); font-size:10px;
+                          margin:0; text-align:center; letter-spacing:0.05em;">
+                    NWP uses physics-based atmospheric models · AI uses historical pattern learning
+                </p>
+            </div>
+            """, height=260)
+
+        except Exception as e:
+            print(f"Comparison card error: {e}")
 
     # ─── RAIN ANIMATION ────────────────────────────────
     if condition in ['Light Rain', 'Heavy Rain']:

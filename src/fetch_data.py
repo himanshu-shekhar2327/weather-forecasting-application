@@ -155,3 +155,45 @@ def get_all_coordinates(place_name):
 
     except Exception:
         return None
+    
+def fetch_nwp_forecast(lat, lon, days=7):
+    """
+    Fetches real NWP forecast from Open-Meteo forecast API.
+    Returns daily mean values — comparable to our ML model output.
+    """
+    url = 'https://api.open-meteo.com/v1/forecast'
+    params = {
+        'latitude':   lat,
+        'longitude':  lon,
+        'daily': [
+            'temperature_2m_mean',
+            'precipitation_sum',
+            'windspeed_10m_mean',
+            'relative_humidity_2m_mean'
+        ],
+        'timezone':      'Asia/Kolkata',
+        'forecast_days': days
+    }
+
+    try:
+        response = requests.get(url, params=params, timeout=30)
+        data = response.json()
+
+        if 'daily' not in data:
+            print(f"NWP API error: {data.get('reason', 'unknown')}")
+            return None
+
+        df = pd.DataFrame(data['daily'])
+        df['time'] = pd.to_datetime(df['time'])
+        df = df.set_index('time')
+        df = df.rename(columns={
+            'temperature_2m_mean':         'temperature',
+            'precipitation_sum':           'precipitation',
+            'windspeed_10m_mean':          'windspeed',
+            'relative_humidity_2m_mean':   'humidity'
+        })
+        return df
+
+    except Exception as e:
+        print(f"NWP fetch error: {e}")
+        return None
