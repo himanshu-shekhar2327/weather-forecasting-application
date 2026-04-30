@@ -282,6 +282,21 @@ WeatherCast India is **not** meant to replace IMD or weather.com. Its purpose is
 > *"The value is in the pipeline and the comparison — not in beating a supercomputer-based weather system."*
 
 ---
+## 🚀 Deployment
+
+This app is deployed on **Streamlit Cloud** and kept alive 24/7 using **UptimeRobot**.
+
+| Detail | Info |
+|--------|------|
+| Platform | Streamlit Cloud |
+| Python version | 3.11 |
+| TensorFlow | Pinned to 2.21.0 (stability) |
+| Uptime monitoring | UptimeRobot — pings every 5 min |
+| Auto-retraining | Every night at 12:00 AM IST via BackgroundScheduler |
+| Live URL | [weather-forecasting-application.streamlit.app](https://weather-forecasting-application.streamlit.app) |
+---
+
+---
 
 ## 🔮 Future Improvements
 
