@@ -1,0 +1,34 @@
+name: Nightly Weather Update
+
+on:
+  schedule:
+    - cron: '30 18 * * *'  # 12:00 AM IST = 6:30 PM UTC
+  workflow_dispatch:         # allows manual trigger from GitHub
+
+jobs:
+  update-weather:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests pandas
+
+      - name: Run update script
+        run: python update_data.py
+
+      - name: Commit and push updated database
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add data/weather.db
+          git diff --staged --quiet || git commit -m "Auto: nightly weather update"
+          git push
