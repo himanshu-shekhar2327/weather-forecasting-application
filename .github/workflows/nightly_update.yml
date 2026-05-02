@@ -2,19 +2,22 @@ name: Nightly Weather Update
 
 on:
   schedule:
-    - cron: '30 18 * * *'  # 12:00 AM IST = 6:30 PM UTC
-  workflow_dispatch:         # allows manual trigger from GitHub
+    - cron: '30 18 * * *'
+  workflow_dispatch:
 
 jobs:
   update-weather:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
