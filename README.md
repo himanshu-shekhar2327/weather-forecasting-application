@@ -135,7 +135,7 @@ Each training sample has **74 features**:
 | Feature engineering | pandas, numpy |
 | Dashboard | Streamlit |
 | Charts | Plotly |
-| Scheduler | APScheduler (BackgroundScheduler) |
+| Scheduler | GitHub Actions (cron job, runs independently) |
 | Deployment | Streamlit Cloud |
 | Uptime monitoring | UptimeRobot (pings every 5 min) |
 
@@ -175,7 +175,11 @@ weather-forecasting-application/
 │   ├── zone5_north/
 │   └── zone6_highland/
 │
-├── app.py                          ← Streamlit dashboard
+├── .github/
+│   └── workflows/
+│       └── nightly_update.yml      ← GitHub Actions scheduler
+├── update_data.py                  ← Standalone nightly data fetch script
+├── app.py                          ← Streamlit dashboard                         
 ├── requirements.txt
 └── README.md
 ```
@@ -252,8 +256,7 @@ When a user searches a city:
 Alongside the ML prediction, the app fetches a real-time 7-day forecast from Open-Meteo's forecast API (physics-based NWP model). Today's values are shown side by side — NWP Forecast vs AI Prediction — for all 4 variables. This honestly shows users where the ML model aligns and where it differs from atmospheric simulation.
 
 ### Nightly Update
-Every night at 12:00 AM IST, the BackgroundScheduler fetches today's actual weather for all 25 cities, appends to the database, retrains all models, and replaces saved models if new ones perform better.
-
+Every night at 12:00 AM IST, a GitHub Actions workflow runs independently on GitHub's servers. It fetches today's actual weather for all 25 cities via `update_data.py`, commits the updated `weather.db` to the repository, and Streamlit Cloud picks it up automatically. This runs completely independent of app uptime — reliable even if the app is sleeping.
 ---
 
 ## 📱 App Features
@@ -292,7 +295,7 @@ This app is deployed on **Streamlit Cloud** and kept alive 24/7 using **UptimeRo
 | Python version | 3.11 |
 | TensorFlow | Pinned to 2.21.0 (stability) |
 | Uptime monitoring | UptimeRobot — pings every 5 min |
-| Auto-retraining | Every night at 12:00 AM IST via BackgroundScheduler |
+| Auto-retraining | Every night at 12:00 AM IST via GitHub Actions |
 | Live URL | [weather-forecasting-application.streamlit.app](https://weather-forecasting-application.streamlit.app) |
 ---
 
